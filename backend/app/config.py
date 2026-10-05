@@ -18,6 +18,15 @@ class Settings(BaseSettings):
     rate_limit_enabled: bool = True
     auth_rate_limit: str = "5/minute"
 
+    # Document uploads
+    max_upload_mb: int = 20
+    max_pdf_pages: int = 500
+    upload_rate_limit: str = "10/minute"
+
+    @property
+    def max_upload_bytes(self) -> int:
+        return self.max_upload_mb * 1024 * 1024
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]

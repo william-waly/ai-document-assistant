@@ -35,6 +35,17 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
 
 
+class DocumentOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    filename: str
+    size_bytes: int
+    page_count: int | None
+    status: str
+    created_at: datetime
+
+
 class UserOut(BaseModel):
     """Public view of a user. Never includes password_hash."""
 
