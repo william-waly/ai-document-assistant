@@ -1,0 +1,7 @@
+:root { font-family: system-ui, sans-serif; color: #1f2937; background: #f9fafb; }
+body { margin: 0; }
+.container { max-width: 720px; margin: 0 auto; padding: 2rem 1rem; }
+.card { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1rem 1.5rem; }
+.muted { color: #6b7280; }
+.ok { color: #15803d; font-weight: 600; }
+.bad { color: #b91c1c; }
