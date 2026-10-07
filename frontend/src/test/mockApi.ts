@@ -37,3 +37,20 @@ export const DOC = {
   created_at: "2026-02-01T10:00:00Z",
   expires_at: "2026-05-02T10:00:00Z",
 };
+
+export const SOURCE = {
+  ref: 1,
+  document_id: "d1",
+  filename: "DAT109_forelesning_05.pdf",
+  page_number: 12,
+  snippet: "Single Responsibility Principle betyr at en klasse bør ha ett hovedansvar.",
+  score: 0.82,
+};
+
+export const SUMMARY = {
+  id: "c1",
+  title: "Hva er SRP?",
+  created_at: "2026-03-01T10:00:00Z",
+  message_count: 2,
+  last_message_at: "2026-03-01T10:01:00Z",
+};

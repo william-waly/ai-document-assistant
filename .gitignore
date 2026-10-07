@@ -20,3 +20,6 @@ dist/
 uploads/
 *.log
 .DS_Store
+
+# Design source from a Manus prototype; its ideas are ported into frontend/, the folder itself is not part of the app
+manus-frontend/

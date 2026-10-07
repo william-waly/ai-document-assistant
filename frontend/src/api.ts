@@ -228,10 +228,10 @@ export const deleteConversation = (id: string) =>
   request<void>(`/conversations/${id}`, { method: "DELETE" });
 
 /** Asks a question. Slow (several seconds): retrieval plus a local language model. */
-export const sendMessage = (conversationId: string, content: string) =>
+export const sendMessage = (conversationId: string, content: string, documentId?: string) =>
   request<MessageExchange>(`/conversations/${conversationId}/messages`, {
     method: "POST",
-    json: { content },
+    json: { content, ...(documentId ? { document_id: documentId } : {}) },
   });
 
 export const search = (query: string, limit = 5, documentId?: string) =>

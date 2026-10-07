@@ -1,8 +1,9 @@
 import { useState, type FormEvent } from "react";
+import { Search } from "lucide-react";
 import { Link } from "react-router-dom";
 import * as api from "../api";
 import { percent, truncate } from "../format";
-import Alert from "./Alert";
+import Notice from "./Notice";
 
 interface SearchBoxProps {
   /** Limit the search to one document. */
@@ -36,35 +37,39 @@ export default function SearchBox({ documentId, placeholder = "Søk i dokumenten
   return (
     <div>
       <form className="search-form" onSubmit={onSubmit} role="search">
-        <label htmlFor="search-input" className="sr-only">
-          Søk
+        <label className="search-field">
+          <Search size={16} aria-hidden="true" />
+          <input
+            type="search"
+            aria-label="Søk"
+            value={query}
+            maxLength={1000}
+            placeholder={placeholder}
+            onChange={(e) => setQuery(e.target.value)}
+          />
         </label>
-        <input
-          id="search-input"
-          type="search"
-          value={query}
-          maxLength={1000}
-          placeholder={placeholder}
-          onChange={(e) => setQuery(e.target.value)}
-        />
-        <button type="submit" className="btn btn-primary" disabled={loading || !query.trim()}>
+        <button type="submit" className="button button--primary" disabled={loading || !query.trim()}>
           {loading ? "Søker…" : "Søk"}
         </button>
       </form>
 
-      {error && <Alert kind="error">{error}</Alert>}
+      {error && (
+        <div className="modal-field-gap">
+          <Notice kind="error">{error}</Notice>
+        </div>
+      )}
 
-      {hits && hits.length === 0 && <p className="muted">Ingen treff. Last opp et dokument først?</p>}
+      {hits && hits.length === 0 && <p className="search-empty">Ingen treff. Last opp et dokument først?</p>}
       {hits && hits.length > 0 && (
-        <ol className="results" aria-label="Søkeresultater">
+        <ol className="search-results" aria-label="Søkeresultater">
           {hits.map((hit) => (
-            <li key={`${hit.document_id}-${hit.chunk_index}`} className="result">
-              <div className="result-head">
+            <li key={`${hit.document_id}-${hit.chunk_index}`} className="search-result">
+              <div className="search-result-head">
                 <Link to={`/documents/${hit.document_id}`}>{hit.filename}</Link>
-                <span className="badge">side {hit.page_number}</span>
-                <span className="muted small">relevans {percent(hit.score)}</span>
+                <span className="page-pill">side {hit.page_number}</span>
+                <span className="muted">relevans {percent(hit.score)}</span>
               </div>
-              <p className="snippet">{truncate(hit.content, 320)}</p>
+              <p>{truncate(hit.content, 320)}</p>
             </li>
           ))}
         </ol>

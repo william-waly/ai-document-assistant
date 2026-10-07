@@ -68,6 +68,18 @@ More detail: [ARCHITECTURE.md](ARCHITECTURE.md) (design and decisions) and
 - **Pluggable AI.** Local Ollama by default. An external OpenAI-compatible provider is supported but
   refuses to start unless explicitly enabled.
 
+**About the interface.** The visual design (layout, colours, components) was first drafted as a
+front-end-only prototype with [Manus](https://manus.im) and then rebuilt for this project: it is
+wired to the real API instead of sample data, written in Norwegian, uses fonts bundled with the app
+(no request to Google Fonts), has readable type sizes and contrast, avoids inline styles so the strict
+Content-Security-Policy holds, and has its own tests. An editorial layer on top (serif display headings, numbered lists, count-up
+statistics, a soft pointer spotlight and staggered fade-ins) is switched off by `prefers-reduced-motion`
+and works in both light and dark mode. Features the prototype showed but the backend
+does not have (PDF preview and download, password change, Google sign-in) were left out on purpose:
+the original PDF is never stored. Light and dark mode both work: the interface follows the device
+by default, and can be switched with the button in the top bar or on the account page. The dark colours
+are derived from the light ones with CSS `light-dark()` and checked for contrast.
+
 ## Architecture
 
 ```mermaid
@@ -111,7 +123,7 @@ interfaces (`EmbeddingProvider`, `LLMProvider`) so they can be swapped and faked
 | Auth and security | bcrypt, PyJWT, slowapi (rate limiting), custom security-header and body-size middleware |
 | PDF | pypdf |
 | AI | Ollama: `nomic-embed-text` (768-dim embeddings), `gemma3:4b` (answers); swappable |
-| Frontend | React 18, TypeScript, Vite, React Router, Vitest + Testing Library |
+| Frontend | React 18, TypeScript, Vite, React Router, lucide icons, self-hosted fonts (Manrope, DM Mono), Vitest + Testing Library |
 | DevOps | Docker, Docker Compose, GitHub Actions, ruff (incl. security rules), pip-audit, npm audit |
 
 ## Database architecture
@@ -289,7 +301,7 @@ ruff check app tests alembic    # lint, including security rules
 # frontend
 cd frontend
 npm ci
-npm run typecheck && npm test   # 41 tests
+npm run typecheck && npm test   # 101 tests
 ```
 
 - **Integration tests run against a real PostgreSQL + pgvector**, rebuilt from the Alembic
@@ -423,10 +435,12 @@ uvicorn app.main:app --reload
 └── frontend/
     ├── Dockerfile  Dockerfile.dev  nginx/default.conf.template
     └── src/
-        ├── api.ts  auth.tsx  hooks.ts  format.ts  styles.css
-        ├── components/         # Layout, RequireAuth, ConfirmDialog, SearchBox, MessageBubble, Composer ...
-        ├── pages/              # AuthPage, Dashboard, Documents, DocumentDetail, ChatPage, Account
-        └── test/  *.test.ts(x) # 41 tests
+        ├── api.ts  auth.tsx  workspace.tsx  hooks.ts  format.ts  styles.css
+        ├── components/         # AppShell, RequireAuth, ConfirmDialog, SearchBox, MessageContent,
+        │                       # SourcesPanel, DocumentRow, StatCard, Toast ...
+        ├── pages/              # AuthPage, Dashboard, Documents, DocumentDetail, ChatPage,
+        │                       # Conversations, Account
+        └── test/  *.test.ts(x) # 101 tests
 ```
 
 ## Limitations

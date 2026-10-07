@@ -5,6 +5,8 @@ import { afterEach } from "vitest";
 afterEach(() => {
   cleanup();
   sessionStorage.clear();
+  localStorage.clear();
+  document.documentElement.removeAttribute("data-theme");
 });
 
 // jsdom does not implement <dialog>.showModal()/close(); emulate just enough.
