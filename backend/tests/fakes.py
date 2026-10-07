@@ -32,6 +32,25 @@ class FakeEmbedder:
         return _vector(text)
 
 
+class FakeLLM:
+    """Records every prompt it receives and answers with `reply`."""
+
+    def __init__(self, reply: str = "Fake answer [1]"):
+        self.reply = reply
+        self.calls: list[list[dict[str, str]]] = []
+
+    def generate(self, messages):
+        self.calls.append(messages)
+        return self.reply
+
+
+class FailingLLM:
+    def generate(self, messages):
+        from app.services.llm import LLMError
+
+        raise LLMError("The language model is unavailable")
+
+
 class FailingEmbedder:
     def embed_documents(self, texts):
         raise EmbeddingError("The embedding service is unavailable")

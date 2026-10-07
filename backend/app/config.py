@@ -1,4 +1,4 @@
-from pydantic import Field
+from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -40,6 +40,37 @@ class Settings(BaseSettings):
     # Search
     search_rate_limit: str = "30/minute"
     search_default_limit: int = 5
+
+    # LLM. Default = local Ollama: document excerpts never leave this machine.
+    llm_provider: str = "ollama"  # "ollama" | "openai_compatible"
+    llm_model: str = "gemma3:4b"
+    llm_temperature: float = 0.1
+    llm_context_tokens: int = 8192
+    llm_timeout_seconds: float = 180
+    llm_rate_limit: str = "10/minute"
+    # Only used by an external ("openai_compatible") provider:
+    llm_base_url: str | None = None
+    llm_api_key: SecretStr | None = None
+    # Safety switch: sending document excerpts to a third party must be opted into.
+    allow_external_llm: bool = False
+
+    # RAG. Measured with nomic-embed-text: relevant questions score 0.64-0.88,
+    # unrelated ones 0.48-0.60. Below this, we answer "not enough information"
+    # WITHOUT calling the LLM at all.
+    rag_top_k: int = 5
+    rag_min_score: float = 0.60
+
+    @model_validator(mode="after")
+    def _external_llm_needs_opt_in(self):
+        if self.llm_provider != "ollama":
+            if not self.allow_external_llm:
+                raise ValueError(
+                    "LLM_PROVIDER is external, which would send document excerpts to a "
+                    "third party. Set ALLOW_EXTERNAL_LLM=true to confirm."
+                )
+            if not self.llm_base_url or self.llm_api_key is None:
+                raise ValueError("An external LLM needs LLM_BASE_URL and LLM_API_KEY")
+        return self
 
     @property
     def max_upload_bytes(self) -> int:

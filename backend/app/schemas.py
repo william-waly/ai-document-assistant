@@ -69,6 +69,34 @@ class SearchResult(BaseModel):
     score: float  # cosine similarity: 1.0 = identical meaning, ~0 = unrelated
 
 
+class AskRequest(BaseModel):
+    question: str = Field(min_length=1, max_length=1000)
+    document_id: uuid.UUID | None = None
+
+    @field_validator("question")
+    @classmethod
+    def question_not_blank(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("Question must not be blank")
+        return v
+
+
+class SourceOut(BaseModel):
+    ref: int
+    document_id: uuid.UUID
+    filename: str
+    page_number: int
+    snippet: str
+    score: float
+
+
+class AskResponse(BaseModel):
+    answer: str
+    answered: bool
+    sources: list[SourceOut]
+
+
 class UserOut(BaseModel):
     """Public view of a user. Never includes password_hash."""
 

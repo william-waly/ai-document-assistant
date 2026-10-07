@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
-from app.api import auth, documents, health, search, users
+from app.api import ask, auth, documents, health, search, users
 from app.config import settings
 from app.rate_limit import limiter
 
@@ -25,3 +25,4 @@ app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(documents.router)
 app.include_router(search.router)
+app.include_router(ask.router)

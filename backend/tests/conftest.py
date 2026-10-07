@@ -82,6 +82,18 @@ def fake_embedder():
     app.dependency_overrides.pop(get_embedding_provider, None)
 
 
+@pytest.fixture(autouse=True)
+def fake_llm():
+    """Every test gets a fake LLM, so no test ever needs Ollama."""
+    from app.services.llm import get_llm_provider
+    from tests.fakes import FakeLLM
+
+    fake = FakeLLM()
+    app.dependency_overrides[get_llm_provider] = lambda: fake
+    yield fake
+    app.dependency_overrides.pop(get_llm_provider, None)
+
+
 @pytest.fixture
 def client():
     return TestClient(app)
