@@ -4,7 +4,7 @@ from sqlalchemy import func, select
 from app.main import app
 from app.models import EMBEDDING_DIM, Document, DocumentChunk
 from app.services.embeddings import get_embedding_provider
-from tests.conftest import register_and_login
+from tests.conftest import delete_account, register_and_login
 from tests.fakes import FailingEmbedder
 from tests.pdf_factory import make_pdf
 from tests.test_documents import upload
@@ -67,7 +67,7 @@ def test_deleting_a_user_removes_all_their_chunks_but_not_others(client, auth_he
     upload(client, bob, content=make_pdf(["Bob text."]))
     assert _chunk_count(db) == 2
 
-    assert client.delete("/users/me", headers=auth_headers).status_code == 204
+    assert delete_account(client, auth_headers).status_code == 204
 
     db.expire_all()
     remaining = db.scalars(select(DocumentChunk)).all()

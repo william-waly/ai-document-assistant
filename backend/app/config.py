@@ -23,6 +23,13 @@ class Settings(BaseSettings):
     max_pdf_pages: int = 500
     upload_rate_limit: str = "10/minute"
 
+    # Retention: data is deleted automatically after this many days. 0 = keep
+    # until the user deletes it. Defaults are ON (privacy by default).
+    document_retention_days: int = Field(default=90, ge=0)
+    conversation_retention_days: int = Field(default=90, ge=0)  # counted from last activity
+    retention_sweep_minutes: int = Field(default=60, ge=0)  # 0 = no background sweep
+    export_rate_limit: str = "5/minute"
+
     # Chunking (characters, not tokens: simple and predictable)
     chunk_size: int = 1000
     chunk_overlap: int = 150

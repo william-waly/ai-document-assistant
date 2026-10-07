@@ -8,7 +8,7 @@ from app.main import app
 from app.models import Conversation, Message
 from app.services.llm import get_llm_provider
 from app.services.rag import NO_ANSWER, Turn, condense_question
-from tests.conftest import register_and_login
+from tests.conftest import delete_account, register_and_login
 from tests.fakes import FailingLLM, FakeLLM
 from tests.pdf_factory import make_pdf
 from tests.test_documents import upload
@@ -143,7 +143,7 @@ def test_deleting_the_user_removes_conversations_and_messages(client, auth_heade
     say(client, auth_headers, new_conversation(client, auth_headers), ROCKET_Q)
     assert count(db, Conversation) == 1 and count(db, Message) == 2
 
-    client.delete("/users/me", headers=auth_headers)
+    delete_account(client, auth_headers)
 
     assert count(db, Conversation) == 0 and count(db, Message) == 0
 

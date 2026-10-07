@@ -2,6 +2,7 @@ from sqlalchemy import select
 
 from app.models import User
 from app.rate_limit import limiter
+from tests.conftest import delete_account
 
 
 def test_register_success(client):
@@ -63,7 +64,7 @@ def test_me_returns_current_user(client, auth_headers):
 
 
 def test_delete_me_removes_account_and_invalidates_token(client, auth_headers, db):
-    assert client.delete("/users/me", headers=auth_headers).status_code == 204
+    assert delete_account(client, auth_headers).status_code == 204
     assert db.scalar(select(User).where(User.email == "alice@example.com")) is None
     assert client.get("/users/me", headers=auth_headers).status_code == 401
     res = client.post("/auth/login", json={"email": "alice@example.com", "password": "correct-horse-1"})

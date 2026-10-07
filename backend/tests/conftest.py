@@ -28,6 +28,7 @@ TEST_DB_URL = os.environ.get("TEST_DATABASE_URL") or _default_test_db_url()
 os.environ["DATABASE_URL"] = TEST_DB_URL
 os.environ["JWT_SECRET"] = "test-secret-not-for-production-0123456789"
 os.environ["RATE_LIMIT_ENABLED"] = "false"
+os.environ["RETENTION_SWEEP_MINUTES"] = "0"  # no background thread during tests
 
 import pytest  # noqa: E402
 from alembic import command  # noqa: E402
@@ -35,6 +36,7 @@ from alembic.config import Config  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 from sqlalchemy import create_engine, text  # noqa: E402
 from sqlalchemy.engine import make_url  # noqa: E402
+from sqlalchemy.exc import OperationalError  # noqa: E402
 
 from app.database import SessionLocal, engine  # noqa: E402
 from app.main import app  # noqa: E402
@@ -42,14 +44,30 @@ from app.main import app  # noqa: E402
 
 def _ensure_database_exists() -> None:
     url = make_url(TEST_DB_URL)
-    admin = create_engine(url.set(database="postgres"), isolation_level="AUTOCOMMIT")
-    with admin.connect() as conn:
-        exists = conn.scalar(
-            text("SELECT 1 FROM pg_database WHERE datname = :n"), {"n": url.database}
+    admin = create_engine(
+        url.set(database="postgres"),
+        isolation_level="AUTOCOMMIT",
+        connect_args={"connect_timeout": 3},
+    )
+    try:
+        with admin.connect() as conn:
+            exists = conn.scalar(
+                text("SELECT 1 FROM pg_database WHERE datname = :n"), {"n": url.database}
+            )
+            if not exists:
+                conn.execute(text(f'CREATE DATABASE "{url.database}"'))
+    except OperationalError as exc:
+        # One clear message instead of hundreds of identical errors after a long wait.
+        pytest.exit(
+            f"Cannot connect to PostgreSQL at {url.host}:{url.port} as '{url.username}'.\n"
+            "  - Is it running?   docker compose up -d postgres\n"
+            "  - Wrong password?  POSTGRES_PASSWORD in .env must match the database,\n"
+            "    or set TEST_DATABASE_URL.\n"
+            f"  Driver said: {str(exc.orig).splitlines()[0]}",
+            returncode=2,
         )
-        if not exists:
-            conn.execute(text(f'CREATE DATABASE "{url.database}"'))
-    admin.dispose()
+    finally:
+        admin.dispose()
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -115,6 +133,11 @@ def register_and_login(client: TestClient, email: str, password: str = "correct-
         "access_token"
     ]
     return {"Authorization": f"Bearer {token}"}
+
+
+def delete_account(client: TestClient, headers: dict, password: str = "correct-horse-1"):
+    """DELETE with a JSON body (httpx's .delete() helper cannot send one)."""
+    return client.request("DELETE", "/users/me", headers=headers, json={"password": password})
 
 
 @pytest.fixture

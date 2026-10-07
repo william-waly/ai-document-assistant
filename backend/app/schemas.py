@@ -1,7 +1,9 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, computed_field, field_validator
+
+from app.config import settings
 
 
 def _normalise_email(v: str) -> str:
@@ -44,6 +46,13 @@ class DocumentOut(BaseModel):
     page_count: int | None
     status: str
     created_at: datetime
+
+    @computed_field
+    @property
+    def expires_at(self) -> datetime | None:
+        """When the retention policy will delete this document (None = never)."""
+        days = settings.document_retention_days
+        return self.created_at + timedelta(days=days) if days > 0 else None
 
 
 class SearchRequest(BaseModel):
@@ -152,6 +161,15 @@ class ConversationDetail(BaseModel):
 class MessageExchange(BaseModel):
     user_message: MessageOut
     assistant_message: MessageOut
+
+
+class PasswordConfirm(BaseModel):
+    password: str = Field(min_length=1, max_length=72)
+
+
+class DataDeletionResult(BaseModel):
+    documents: int
+    conversations: int
 
 
 class UserOut(BaseModel):
