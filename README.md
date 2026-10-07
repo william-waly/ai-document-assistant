@@ -354,7 +354,7 @@ All settings, with defaults, are in `backend/app/config.py`.
 ## How to run locally
 
 **Prerequisites:** Docker Desktop, [Ollama](https://ollama.com). For development without Docker:
-Python 3.12+ and Node 20+.
+Python 3.12+ and Node 24 (22.22+ also works; see `frontend/.nvmrc`).
 
 ```bash
 # 1. Models (one time)
