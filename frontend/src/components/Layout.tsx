@@ -16,6 +16,7 @@ export default function Layout() {
               Oversikt
             </NavLink>
             <NavLink to="/documents">Dokumenter</NavLink>
+            <NavLink to="/chat">Samtaler</NavLink>
             <NavLink to="/account">Konto</NavLink>
           </nav>
           <div className="user">

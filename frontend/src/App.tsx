@@ -3,6 +3,7 @@ import Layout from "./components/Layout";
 import RequireAuth from "./components/RequireAuth";
 import Account from "./pages/Account";
 import AuthPage from "./pages/AuthPage";
+import ChatPage from "./pages/ChatPage";
 import Dashboard from "./pages/Dashboard";
 import DocumentDetail from "./pages/DocumentDetail";
 import Documents from "./pages/Documents";
@@ -21,6 +22,8 @@ export default function App() {
           <Route index element={<Dashboard />} />
           <Route path="documents" element={<Documents />} />
           <Route path="documents/:id" element={<DocumentDetail />} />
+          <Route path="chat" element={<ChatPage />} />
+          <Route path="chat/:id" element={<ChatPage />} />
           <Route path="account" element={<Account />} />
         </Route>
       </Route>

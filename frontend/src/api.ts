@@ -37,6 +37,36 @@ export interface ConversationSummary {
   last_message_at: string | null;
 }
 
+/** One cited source under an assistant answer. `ref` matches the [n] in the text. */
+export interface SourceInfo {
+  ref: number;
+  document_id: string;
+  filename: string;
+  page_number: number;
+  snippet: string;
+  score: number;
+}
+
+export interface ChatMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  sources: SourceInfo[];
+  created_at: string;
+}
+
+export interface ConversationDetail {
+  id: string;
+  title: string;
+  created_at: string;
+  messages: ChatMessage[];
+}
+
+export interface MessageExchange {
+  user_message: ChatMessage;
+  assistant_message: ChatMessage;
+}
+
 export interface DataDeletionResult {
   documents: number;
   conversations: number;
@@ -188,6 +218,21 @@ export const uploadDocument = (file: File) => {
 export const deleteDocument = (id: string) => request<void>(`/documents/${id}`, { method: "DELETE" });
 
 export const listConversations = () => request<ConversationSummary[]>("/conversations");
+
+export const createConversation = () =>
+  request<ConversationSummary>("/conversations", { method: "POST", json: {} });
+
+export const getConversation = (id: string) => request<ConversationDetail>(`/conversations/${id}`);
+
+export const deleteConversation = (id: string) =>
+  request<void>(`/conversations/${id}`, { method: "DELETE" });
+
+/** Asks a question. Slow (several seconds): retrieval plus a local language model. */
+export const sendMessage = (conversationId: string, content: string) =>
+  request<MessageExchange>(`/conversations/${conversationId}/messages`, {
+    method: "POST",
+    json: { content },
+  });
 
 export const search = (query: string, limit = 5, documentId?: string) =>
   request<SearchHit[]>("/search", {

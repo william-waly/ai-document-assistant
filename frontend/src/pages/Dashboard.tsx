@@ -33,7 +33,10 @@ export default function Dashboard() {
               <span className="muted">{data.conversations.length === 1 ? "samtale" : "samtaler"}</span>
             </div>
             <div className="card stat stat-action">
-              <Link to="/documents" className="btn btn-primary">
+              <Link to="/chat" className="btn btn-primary">
+                Ny samtale
+              </Link>
+              <Link to="/documents" className="btn">
                 Last opp dokument
               </Link>
             </div>
@@ -44,6 +47,23 @@ export default function Dashboard() {
             <p className="muted small">Finner passasjer etter betydning, ikke bare eksakte ord.</p>
             <SearchBox />
           </section>
+
+          {data.conversations.length > 0 && (
+            <section className="card">
+              <div className="section-head">
+                <h2>Siste samtaler</h2>
+                <Link to="/chat">Se alle</Link>
+              </div>
+              <ul className="plain-list">
+                {data.conversations.slice(0, LATEST).map((conversation) => (
+                  <li key={conversation.id}>
+                    <Link to={`/chat/${conversation.id}`}>{conversation.title}</Link>
+                    <span className="muted small">{formatDate(conversation.last_message_at ?? conversation.created_at)}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
 
           <section className="card">
             <div className="section-head">
