@@ -7,9 +7,24 @@ import os
 from pathlib import Path
 
 # Must be set BEFORE the app is imported, since settings load at import time.
-TEST_DB_URL = os.environ.get(
-    "TEST_DATABASE_URL", "postgresql+psycopg://docai:change-me@localhost:5432/docai_test"
-)
+def _default_test_db_url() -> str:
+    """Same credentials as the dev database (read from the root .env), but a
+    separate database, so tests never touch your real data."""
+    from dotenv import dotenv_values
+    from sqlalchemy.engine import URL
+
+    env = dotenv_values(Path(__file__).parents[2] / ".env")
+    return URL.create(
+        "postgresql+psycopg",
+        username=env.get("POSTGRES_USER") or "docai",
+        password=env.get("POSTGRES_PASSWORD") or "change-me",
+        host="localhost",
+        port=5432,
+        database="docai_test",
+    ).render_as_string(hide_password=False)
+
+
+TEST_DB_URL = os.environ.get("TEST_DATABASE_URL") or _default_test_db_url()
 os.environ["DATABASE_URL"] = TEST_DB_URL
 os.environ["JWT_SECRET"] = "test-secret-not-for-production-0123456789"
 os.environ["RATE_LIMIT_ENABLED"] = "false"
@@ -53,6 +68,18 @@ def _clean_tables(_migrated_database):
     yield
     with engine.begin() as conn:
         conn.execute(text("TRUNCATE users CASCADE"))
+
+
+@pytest.fixture(autouse=True)
+def fake_embedder():
+    """Every test gets a fake embedder, so no test ever needs Ollama."""
+    from app.services.embeddings import get_embedding_provider
+    from tests.fakes import FakeEmbedder
+
+    fake = FakeEmbedder()
+    app.dependency_overrides[get_embedding_provider] = lambda: fake
+    yield fake
+    app.dependency_overrides.pop(get_embedding_provider, None)
 
 
 @pytest.fixture

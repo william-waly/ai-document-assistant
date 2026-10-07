@@ -23,6 +23,20 @@ class Settings(BaseSettings):
     max_pdf_pages: int = 500
     upload_rate_limit: str = "10/minute"
 
+    # Chunking (characters, not tokens: simple and predictable)
+    chunk_size: int = 1000
+    chunk_overlap: int = 150
+
+    # Embeddings. Document text is sent ONLY to this URL. Default = local Ollama.
+    embedding_provider: str = "ollama"
+    ollama_base_url: str = "http://localhost:11434"
+    embedding_model: str = "nomic-embed-text"
+    embedding_batch_size: int = 32
+    embedding_timeout_seconds: float = 120
+    # nomic-embed-text is trained with task prefixes; they improve retrieval quality.
+    embedding_document_prefix: str = "search_document: "
+    embedding_query_prefix: str = "search_query: "
+
     @property
     def max_upload_bytes(self) -> int:
         return self.max_upload_mb * 1024 * 1024
