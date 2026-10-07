@@ -1,5 +1,5 @@
 """Security middleware. Plain ASGI so they work on streamed bodies and responses."""
-from fastapi import HTTPException, status
+from fastapi import HTTPException
 from starlette.datastructures import MutableHeaders
 from starlette.responses import JSONResponse
 
@@ -82,9 +82,7 @@ class BodySizeLimitMiddleware:
 
         declared = dict(scope["headers"]).get(b"content-length")
         if declared and declared.isdigit() and int(declared) > limit:
-            response = JSONResponse(
-                {"detail": "Request body too large"}, status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
-            )
+            response = JSONResponse({"detail": "Request body too large"}, status_code=413)
             await response(scope, receive, send)
             return
 
@@ -98,9 +96,7 @@ class BodySizeLimitMiddleware:
                 if received > limit:
                     # An HTTPException passes through FastAPI's body parsing as-is
                     # and becomes a clean 413 response.
-                    raise HTTPException(
-                        status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, "Request body too large"
-                    )
+                    raise HTTPException(413, "Request body too large")
             return message
 
         await self.app(scope, limited_receive, send)

@@ -1,0 +1,71 @@
+# PRODUCTION-LIKE stack: built images, no source mounts, no reload, hardened containers.
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+# Differences from the dev stack (docker-compose.yml):
+#   - the database port is NOT published: only the backend can reach PostgreSQL
+#   - the frontend is a static build served by unprivileged nginx
+#   - containers run non-root, with a read-only filesystem and no extra capabilities
+#
+# Put TLS in front of this (a reverse proxy) before exposing it to the internet.
+x-hardening: &hardening
+  restart: unless-stopped
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    <<: *hardening
+    build: ./backend
+    env_file: .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    tmpfs:
+      - /tmp # large uploads are spooled here, in memory, never on disk
+
+  frontend:
+    <<: *hardening
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: ${VITE_API_URL}
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "5173:8080"
+    tmpfs:
+      - /tmp # nginx pid file and temp files
+
+  # Local LLM in a container. Start with: --profile local-llm
+  ollama:
+    image: ollama/ollama:latest
+    profiles: ["local-llm"]
+    restart: unless-stopped
+    volumes:
+      - ollama:/root/.ollama
+
+volumes:
+  pgdata:
+  ollama:

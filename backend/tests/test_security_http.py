@@ -3,7 +3,6 @@ import re
 import uuid
 
 import pytest
-from fastapi.routing import APIRoute
 from fastapi.testclient import TestClient
 from sqlalchemy import text
 
@@ -192,11 +191,12 @@ def test_unexpected_errors_return_a_generic_500():
 # --- authentication: every endpoint, automatically ----------------------------------------------------
 
 PUBLIC = {("GET", "/health"), ("POST", "/auth/register"), ("POST", "/auth/login")}
+# Read the routes from the OpenAPI schema: it lists every endpoint the API
+# exposes, independent of how the framework stores its routes internally.
 ROUTES = sorted(
-    (method, route.path)
-    for route in app.routes
-    if isinstance(route, APIRoute)
-    for method in route.methods
+    (method.upper(), path)
+    for path, operations in app.openapi()["paths"].items()
+    for method in operations
 )
 
 

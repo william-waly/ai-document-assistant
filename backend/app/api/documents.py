@@ -48,12 +48,12 @@ def upload_document(
     # Cheap early rejection. The header can lie, so the real check is below.
     declared = request.headers.get("content-length")
     if declared and declared.isdigit() and int(declared) > settings.max_upload_bytes + _MULTIPART_OVERHEAD:
-        raise HTTPException(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, "File too large")
+        raise HTTPException(413, "File too large")  # numeric: Starlette renamed the constant
 
     data = file.file.read(settings.max_upload_bytes + 1)
     if len(data) > settings.max_upload_bytes:
         raise HTTPException(
-            status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            413,
             f"File too large (max {settings.max_upload_mb} MB)",
         )
 
@@ -64,7 +64,7 @@ def upload_document(
     try:
         pages = extract_pages(data)
     except PdfProcessingError as exc:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc)) from exc
+        raise HTTPException(422, str(exc)) from exc
 
     chunks = chunk_pages(pages)
     # Embed BEFORE touching the database: if the embedding service fails, nothing

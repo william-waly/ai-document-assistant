@@ -1,6 +1,10 @@
+# DEVELOPMENT stack (hot reload, ports open for tools).  Start:  docker compose up --build
+# For the production-like stack see docker-compose.prod.yml.
 services:
   postgres:
     image: pgvector/pgvector:pg16
+    # Come back by themselves after Docker Desktop restarts.
+    restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -9,7 +13,7 @@ services:
       - pgdata:/var/lib/postgresql/data
       - ./db/init:/docker-entrypoint-initdb.d:ro
     ports:
-      - "5432:5432"
+      - "5432:5432" # for psql and the test suite
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
@@ -19,18 +23,22 @@ services:
   backend:
     build: ./backend
     env_file: .env
+    # Same image as production, but with auto-reload on code changes.
+    command: sh -c "alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
     depends_on:
       postgres:
         condition: service_healthy
     ports:
       - "8000:8000"
     extra_hosts:
-      - "host.docker.internal:host-gateway" # nå Ollama på vertsmaskinen (Linux trenger denne)
+      - "host.docker.internal:host-gateway" # reach Ollama on the host (Linux needs this)
     volumes:
-      - ./backend/app:/code/app # hot reload under utvikling
+      - ./backend/app:/code/app:ro # hot reload under development
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
     environment:
       VITE_API_URL: ${VITE_API_URL}
     depends_on:
@@ -40,7 +48,7 @@ services:
     volumes:
       - ./frontend/src:/app/src
 
-  # Lokal LLM. Startes kun med: docker compose --profile local-llm up
+  # Local LLM in a container. Start with: docker compose --profile local-llm up
   ollama:
     image: ollama/ollama:latest
     profiles: ["local-llm"]

@@ -1,0 +1,31 @@
+server {
+    listen 8080;
+    server_name _;
+    server_tokens off;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # Security headers. (Declared at server level only: an add_header inside a
+    # location would silently replace all of these.)
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header Referrer-Policy "no-referrer" always;
+    # Only our own scripts and styles may run; the browser may only call our API.
+    # ${API_ORIGIN} is filled in by the Dockerfile at build time (= VITE_API_URL).
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' ${API_ORIGIN}; frame-ancestors 'none'; base-uri 'self'; form-action 'self'" always;
+
+    # Hashed build output never changes: cache it. index.html must always be re-checked.
+    location /assets/ {
+        expires 1y;
+    }
+
+    location = /index.html {
+        expires -1;
+    }
+
+    # Single-page app: unknown paths fall back to index.html.
+    location / {
+        try_files $uri /index.html;
+    }
+}
