@@ -28,7 +28,7 @@ def search(
     try:
         query_embedding = embedder.embed_query(body.query)
     except EmbeddingError as exc:
-        raise HTTPException(status.HTTP_502_BAD_GATEWAY, str(exc))
+        raise HTTPException(status.HTTP_502_BAD_GATEWAY, str(exc)) from exc
 
     # The user id comes from the verified token, never from the request body.
     hits = search_chunks(db, user.id, query_embedding, body.limit, body.document_id)

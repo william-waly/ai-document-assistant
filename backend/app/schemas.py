@@ -34,7 +34,7 @@ class LoginRequest(BaseModel):
 
 class TokenResponse(BaseModel):
     access_token: str
-    token_type: str = "bearer"
+    token_type: str = "bearer"  # noqa: S105 (the OAuth token *type*, not a secret)
 
 
 class DocumentOut(BaseModel):

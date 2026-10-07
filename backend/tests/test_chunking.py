@@ -37,7 +37,7 @@ def test_chunk_index_runs_across_the_whole_document():
 def test_consecutive_chunks_overlap():
     text = " ".join(f"Sentence number {i} is here." for i in range(40))
     chunks = chunk_pages(pages(text), max_chars=150, overlap=40)
-    for prev, nxt in zip(chunks, chunks[1:]):
+    for prev, nxt in zip(chunks, chunks[1:], strict=False):  # pairs of neighbours
         last_words = prev.text.split()[-2:]
         assert " ".join(last_words) in nxt.text
 

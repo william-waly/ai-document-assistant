@@ -8,7 +8,7 @@ main.py) or by hand:  python -m app.services.retention
 import asyncio
 import logging
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
@@ -31,7 +31,7 @@ class PurgeResult:
 
 def purge_expired(db: Session, now: datetime | None = None) -> PurgeResult:
     """Deletes expired data for ALL users. `now` is injectable for tests."""
-    now = now or datetime.now(timezone.utc)
+    now = now or datetime.now(UTC)
     return PurgeResult(_purge_documents(db, now), _purge_conversations(db, now))
 
 

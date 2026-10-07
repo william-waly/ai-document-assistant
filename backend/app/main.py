@@ -1,13 +1,15 @@
 import asyncio
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
 from app.api import ask, auth, conversations, documents, health, search, users
 from app.config import settings
+from app.middleware import BodySizeLimitMiddleware, SecurityHeadersMiddleware, security_headers
 from app.rate_limit import limiter
 from app.services.retention import retention_loop
 
@@ -24,16 +26,33 @@ async def lifespan(_app: FastAPI):
 
 app = FastAPI(title="AI Document Assistant", version="0.3.0", lifespan=lifespan)
 
+@app.exception_handler(Exception)
+async def unhandled_error(request: Request, exc: Exception) -> JSONResponse:
+    """Last resort. The client learns nothing about the cause; the server log
+    still has the full traceback (Starlette re-raises after answering)."""
+    return JSONResponse(
+        {"detail": "Internal server error"},
+        status_code=500,
+        headers=security_headers(request.url.path),
+    )
+
+
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# Explicit origin allow-list from config, never "*".
+# Middleware order: the LAST one added is outermost. Request path:
+#   SecurityHeaders -> CORS -> BodySizeLimit -> app
+# so even rejected or preflight responses carry the security headers.
+app.add_middleware(BodySizeLimitMiddleware)
+# Explicit allow-lists, never "*". Auth uses a Bearer header, not cookies, so
+# credentials mode stays off and CSRF is not a concern.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origin_list,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
+app.add_middleware(SecurityHeadersMiddleware)
 
 app.include_router(health.router)
 app.include_router(auth.router)

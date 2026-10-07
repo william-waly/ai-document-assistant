@@ -28,7 +28,7 @@ def register(request: Request, body: RegisterRequest, db: Session = Depends(get_
     except IntegrityError:
         # The UNIQUE constraint decides, so two simultaneous requests can't both win.
         db.rollback()
-        raise HTTPException(status.HTTP_409_CONFLICT, "Email already registered")
+        raise HTTPException(status.HTTP_409_CONFLICT, "Email already registered") from None
     return user
 
 

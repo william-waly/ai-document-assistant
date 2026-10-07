@@ -18,6 +18,10 @@ class Settings(BaseSettings):
     rate_limit_enabled: bool = True
     auth_rate_limit: str = "5/minute"
 
+    # Security
+    max_json_body_bytes: int = 65536  # every request except file uploads
+    hsts_enabled: bool = False  # set true when served over HTTPS
+
     # Document uploads
     max_upload_mb: int = 20
     max_pdf_pages: int = 500

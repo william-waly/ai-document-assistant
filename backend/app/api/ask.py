@@ -31,7 +31,7 @@ def ask(
     try:
         result = answer_question(db, user.id, body.question, embedder, llm, body.document_id)
     except (EmbeddingError, LLMError) as exc:
-        raise HTTPException(status.HTTP_502_BAD_GATEWAY, str(exc))
+        raise HTTPException(status.HTTP_502_BAD_GATEWAY, str(exc)) from exc
     return AskResponse(
         answer=result.answer,
         answered=result.answered,

@@ -1,6 +1,6 @@
 """GDPR features: retention, erasing my data, deleting my account, exporting my data."""
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from sqlalchemy import func, select, text
@@ -22,7 +22,7 @@ def _policy(monkeypatch):
 
 
 def in_days(days: int) -> datetime:
-    return datetime.now(timezone.utc) + timedelta(days=days)
+    return datetime.now(UTC) + timedelta(days=days)
 
 
 def count(db, model):

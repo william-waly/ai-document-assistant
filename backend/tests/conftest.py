@@ -6,6 +6,7 @@ missing and rebuilt with the Alembic migrations (so migrations are tested too).
 import os
 from pathlib import Path
 
+
 # Must be set BEFORE the app is imported, since settings load at import time.
 def _default_test_db_url() -> str:
     """Same credentials as the dev database (read from the root .env), but a
@@ -31,13 +32,13 @@ os.environ["RATE_LIMIT_ENABLED"] = "false"
 os.environ["RETENTION_SWEEP_MINUTES"] = "0"  # no background thread during tests
 
 import pytest  # noqa: E402
-from alembic import command  # noqa: E402
-from alembic.config import Config  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 from sqlalchemy import create_engine, text  # noqa: E402
 from sqlalchemy.engine import make_url  # noqa: E402
 from sqlalchemy.exc import OperationalError  # noqa: E402
 
+from alembic import command  # noqa: E402
+from alembic.config import Config  # noqa: E402
 from app.database import SessionLocal, engine  # noqa: E402
 from app.main import app  # noqa: E402
 

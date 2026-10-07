@@ -1,5 +1,5 @@
 """User-facing GDPR operations: erase my data, export my data."""
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy import delete, select
@@ -83,7 +83,7 @@ def build_export(db: Session, user: User, include_document_text: bool = False) -
         )
 
     data = {
-        "exported_at": datetime.now(timezone.utc),
+        "exported_at": datetime.now(UTC),
         "note": (
             "Original PDF files are not stored. Document text is only included "
             "with include_document_text=true (chunks overlap slightly). Embeddings "

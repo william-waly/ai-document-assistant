@@ -97,7 +97,8 @@ def get_llm_provider() -> LLMProvider:
             settings.llm_timeout_seconds,
         )
     if settings.llm_provider == "openai_compatible":
-        assert settings.llm_base_url and settings.llm_api_key  # guaranteed by Settings
+        if not settings.llm_base_url or settings.llm_api_key is None:
+            raise ValueError("An external LLM needs LLM_BASE_URL and LLM_API_KEY")
         return OpenAICompatibleChat(
             settings.llm_base_url,
             settings.llm_api_key.get_secret_value(),

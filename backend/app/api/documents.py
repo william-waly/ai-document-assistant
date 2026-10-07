@@ -64,7 +64,7 @@ def upload_document(
     try:
         pages = extract_pages(data)
     except PdfProcessingError as exc:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc))
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc)) from exc
 
     chunks = chunk_pages(pages)
     # Embed BEFORE touching the database: if the embedding service fails, nothing
@@ -72,7 +72,7 @@ def upload_document(
     try:
         vectors = embedder.embed_documents([c.text for c in chunks])
     except EmbeddingError as exc:
-        raise HTTPException(status.HTTP_502_BAD_GATEWAY, str(exc))
+        raise HTTPException(status.HTTP_502_BAD_GATEWAY, str(exc)) from exc
 
     # Data minimisation: the original file is never written to disk. We keep
     # metadata + chunks + embeddings, all in ONE transaction (all or nothing).
@@ -94,7 +94,7 @@ def upload_document(
             content=chunk.text,
             embedding=vector,
         )
-        for chunk, vector in zip(chunks, vectors)
+        for chunk, vector in zip(chunks, vectors, strict=True)  # embedder guarantees equal length
     )
     db.commit()
     return document

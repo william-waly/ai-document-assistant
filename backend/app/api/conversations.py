@@ -1,6 +1,6 @@
 import uuid
 from dataclasses import asdict
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy import func, select
@@ -113,7 +113,7 @@ def send_message(
 ):
     """Asks a question in this conversation and stores both the question and the answer."""
     conversation = _get_owned_conversation(db, user, conversation_id)
-    received_at = datetime.now(timezone.utc)
+    received_at = datetime.now(UTC)
 
     recent = db.scalars(
         select(Message)
@@ -128,9 +128,9 @@ def send_message(
     try:
         result = answer_question(db, user.id, body.content, embedder, llm, body.document_id, history)
     except (EmbeddingError, LLMError) as exc:
-        raise HTTPException(status.HTTP_502_BAD_GATEWAY, str(exc))
+        raise HTTPException(status.HTTP_502_BAD_GATEWAY, str(exc)) from exc
 
-    answered_at = max(datetime.now(timezone.utc), received_at + timedelta(microseconds=1))
+    answered_at = max(datetime.now(UTC), received_at + timedelta(microseconds=1))
     user_message = Message(
         conversation_id=conversation.id, role="user", content=body.content, created_at=received_at
     )

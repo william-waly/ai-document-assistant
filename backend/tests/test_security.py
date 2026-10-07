@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import jwt
 
@@ -31,7 +31,7 @@ def test_token_roundtrip():
 
 def test_token_signed_with_other_secret_is_rejected():
     forged = jwt.encode(
-        {"sub": str(uuid.uuid4()), "exp": datetime.now(timezone.utc) + timedelta(hours=1)},
+        {"sub": str(uuid.uuid4()), "exp": datetime.now(UTC) + timedelta(hours=1)},
         "another-secret-that-is-long-enough-123",
         algorithm=ALGORITHM,
     )
@@ -40,7 +40,7 @@ def test_token_signed_with_other_secret_is_rejected():
 
 def test_expired_token_is_rejected():
     expired = jwt.encode(
-        {"sub": str(uuid.uuid4()), "exp": datetime.now(timezone.utc) - timedelta(seconds=5)},
+        {"sub": str(uuid.uuid4()), "exp": datetime.now(UTC) - timedelta(seconds=5)},
         settings.jwt_secret,
         algorithm=ALGORITHM,
     )
