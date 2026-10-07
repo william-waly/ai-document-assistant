@@ -1,33 +1,31 @@
-import { useEffect, useState } from "react";
-import { fetchHealth, type Health } from "./api";
+import { Route, Routes } from "react-router-dom";
+import Layout from "./components/Layout";
+import RequireAuth from "./components/RequireAuth";
+import Account from "./pages/Account";
+import AuthPage from "./pages/AuthPage";
+import Dashboard from "./pages/Dashboard";
+import DocumentDetail from "./pages/DocumentDetail";
+import Documents from "./pages/Documents";
+import NotFound from "./pages/NotFound";
 
+/** Routes only. The router itself is added in main.tsx (and in tests). */
 export default function App() {
-  const [health, setHealth] = useState<Health | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetchHealth()
-      .then(setHealth)
-      .catch((e: Error) => setError(e.message));
-  }, []);
-
   return (
-    <main className="container">
-      <h1>AI Document Assistant</h1>
-      <p className="muted">Still spørsmål til dine egne PDF-dokumenter.</p>
+    <Routes>
+      <Route path="/login" element={<AuthPage mode="login" />} />
+      <Route path="/register" element={<AuthPage mode="register" />} />
 
-      <section className="card">
-        <h2>Systemstatus</h2>
-        {error && <p className="bad">Backend utilgjengelig: {error}</p>}
-        {!error && !health && <p>Sjekker…</p>}
-        {health && (
-          <ul>
-            <li>API: <span className="ok">{health.status}</span></li>
-            <li>Database: <span className="ok">{health.database}</span></li>
-            <li>pgvector: <span className="ok">{health.pgvector}</span></li>
-          </ul>
-        )}
-      </section>
-    </main>
+      {/* Everything below needs a logged-in user */}
+      <Route element={<RequireAuth />}>
+        <Route element={<Layout />}>
+          <Route index element={<Dashboard />} />
+          <Route path="documents" element={<Documents />} />
+          <Route path="documents/:id" element={<DocumentDetail />} />
+          <Route path="account" element={<Account />} />
+        </Route>
+      </Route>
+
+      <Route path="*" element={<NotFound />} />
+    </Routes>
   );
 }
