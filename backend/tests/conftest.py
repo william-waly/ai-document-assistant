@@ -18,7 +18,7 @@ def _default_test_db_url() -> str:
         "postgresql+psycopg",
         username=env.get("POSTGRES_USER") or "docai",
         password=env.get("POSTGRES_PASSWORD") or "change-me",
-        host="localhost",
+        host="127.0.0.1",  # not "localhost": avoids a slow IPv6 attempt on Windows
         port=5432,
         database="docai_test",
     ).render_as_string(hide_password=False)

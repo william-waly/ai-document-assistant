@@ -7,6 +7,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     ForeignKeyConstraint,
+    Index,
     Integer,
     String,
     Text,
@@ -67,6 +68,13 @@ class DocumentChunk(Base):
             name="fk_chunks_document_owner",
         ),
         UniqueConstraint("document_id", "chunk_index", name="uq_chunks_doc_index"),
+        # Approximate nearest-neighbour index for cosine search (see migration 0002).
+        Index(
+            "ix_document_chunks_embedding_hnsw",
+            "embedding",
+            postgresql_using="hnsw",
+            postgresql_ops={"embedding": "vector_cosine_ops"},
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)

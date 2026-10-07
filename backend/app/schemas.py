@@ -46,6 +46,29 @@ class DocumentOut(BaseModel):
     created_at: datetime
 
 
+class SearchRequest(BaseModel):
+    query: str = Field(min_length=1, max_length=1000)
+    limit: int = Field(default=5, ge=1, le=20)
+    document_id: uuid.UUID | None = None  # optional: search inside one document
+
+    @field_validator("query")
+    @classmethod
+    def query_not_blank(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("Query must not be blank")
+        return v
+
+
+class SearchResult(BaseModel):
+    document_id: uuid.UUID
+    filename: str
+    page_number: int
+    chunk_index: int
+    content: str
+    score: float  # cosine similarity: 1.0 = identical meaning, ~0 = unrelated
+
+
 class UserOut(BaseModel):
     """Public view of a user. Never includes password_hash."""
 

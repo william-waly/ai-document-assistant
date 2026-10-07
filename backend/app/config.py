@@ -37,6 +37,10 @@ class Settings(BaseSettings):
     embedding_document_prefix: str = "search_document: "
     embedding_query_prefix: str = "search_query: "
 
+    # Search
+    search_rate_limit: str = "30/minute"
+    search_default_limit: int = 5
+
     @property
     def max_upload_bytes(self) -> int:
         return self.max_upload_mb * 1024 * 1024
