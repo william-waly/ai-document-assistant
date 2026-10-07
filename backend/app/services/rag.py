@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.services.embeddings import EmbeddingProvider
-from app.services.llm import LLMProvider
+from app.services.llm import LLMError, LLMProvider
 from app.services.search import SearchHit, search_chunks
 
 NO_ANSWER = "Jeg finner ikke tilstrekkelig informasjon i dokumentene dine til å svare på dette."
@@ -72,6 +72,16 @@ def _has_content(answer: str) -> bool:
     return bool(re.sub(r"[\W_]+", "", _CITATION.sub("", answer)))
 
 
+def _tidy(text: str) -> str:
+    """Cleans up the gap left where a [n] marker was removed."""
+    text = re.sub(r"\s+([.,;:!?])", r"\1", text)
+    return re.sub(r"[ \t]{2,}", " ", text).strip()
+
+
+def _strip_citations(text: str) -> str:
+    return _tidy(_CITATION.sub("", text))
+
+
 def _renumber(answer: str, mapping: dict[int, int]) -> str:
     """Rewrites [n] markers so they match the numbering of the sources shown."""
 
@@ -79,13 +89,44 @@ def _renumber(answer: str, mapping: dict[int, int]) -> str:
         new = [mapping[int(n)] for n in re.split(r"\s*,\s*", match.group(1)) if int(n) in mapping]
         return f"[{', '.join(map(str, new))}]" if new else ""
 
-    text = _CITATION.sub(replace, answer)
-    text = re.sub(r"\s+([.,;:!?])", r"\1", text)  # no stray space where a marker was removed
-    return re.sub(r"[ \t]{2,}", " ", text).strip()
+    return _tidy(_CITATION.sub(replace, answer))
 
 
 def _snippet(text: str) -> str:
     return text if len(text) <= SNIPPET_CHARS else text[:SNIPPET_CHARS].rsplit(" ", 1)[0] + "…"
+
+
+@dataclass(frozen=True)
+class Turn:
+    role: str  # "user" | "assistant"
+    content: str
+
+
+CONDENSE_PROMPT = (
+    "Rewrite the follow-up question as a standalone question that can be understood "
+    "without the conversation. Keep the language of the follow-up. If it is already "
+    "standalone, return it unchanged. Output ONLY the question, nothing else."
+)
+_MAX_QUESTION_CHARS = 1000
+
+
+def condense_question(llm: LLMProvider, history: list[Turn], question: str) -> str:
+    """Turns "what about cameras?" into a question that makes sense on its own,
+    so retrieval does not depend on earlier messages. Falls back to the original."""
+    conversation = "\n".join(
+        f"{'User' if t.role == 'user' else 'Assistant'}: {_strip_citations(t.content)[:500]}"
+        for t in history
+    )
+    prompt = f"Conversation:\n{conversation}\n\nFollow-up question: {question}\n\nStandalone question:"
+    try:
+        rewritten = llm.generate(
+            [{"role": "system", "content": CONDENSE_PROMPT}, {"role": "user", "content": prompt}]
+        )
+    except LLMError:
+        return question
+    lines = rewritten.strip().splitlines()
+    candidate = lines[0].strip().strip('"').strip() if lines else ""
+    return candidate if 0 < len(candidate) <= _MAX_QUESTION_CHARS else question
 
 
 def answer_question(
@@ -95,7 +136,12 @@ def answer_question(
     embedder: EmbeddingProvider,
     llm: LLMProvider,
     document_id: uuid.UUID | None = None,
+    history: list[Turn] | None = None,
 ) -> RagAnswer:
+    if history:
+        # The answer step only ever sees this standalone question, never the
+        # earlier assistant text, so old answers can't steer the new one.
+        question = condense_question(llm, history, question)
     hits = search_chunks(db, user_id, embedder.embed_query(question), settings.rag_top_k, document_id)
     hits = [h for h in hits if h.score >= settings.rag_min_score]
     if not hits:

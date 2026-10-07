@@ -11,6 +11,7 @@ from app.models import Document, DocumentChunk, User
 from app.rate_limit import limiter
 from app.schemas import DocumentOut
 from app.services.chunking import chunk_pages
+from app.services.documents import delete_document as remove_document
 from app.services.embeddings import EmbeddingError, EmbeddingProvider, get_embedding_provider
 from app.services.pdf import PDF_MAGIC, PdfProcessingError, extract_pages, sanitize_filename
 
@@ -121,7 +122,6 @@ def delete_document(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Chunks and embeddings are removed by ON DELETE CASCADE."""
-    db.delete(_get_owned_document(db, user, document_id))
-    db.commit()
+    """Removes the document, its chunks/embeddings and its traces in chat history."""
+    remove_document(db, _get_owned_document(db, user, document_id))
     return Response(status_code=status.HTTP_204_NO_CONTENT)

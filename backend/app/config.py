@@ -57,6 +57,7 @@ class Settings(BaseSettings):
     # RAG. Measured with nomic-embed-text: relevant questions score 0.64-0.88,
     # unrelated ones 0.48-0.60. Below this, we answer "not enough information"
     # WITHOUT calling the LLM at all.
+    chat_history_messages: int = 6  # how many earlier messages are used to understand a follow-up
     rag_top_k: int = 5
     rag_min_score: float = 0.60
 

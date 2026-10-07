@@ -97,6 +97,63 @@ class AskResponse(BaseModel):
     sources: list[SourceOut]
 
 
+class ConversationCreate(BaseModel):
+    title: str | None = Field(default=None, max_length=200)
+
+    @field_validator("title")
+    @classmethod
+    def blank_title_is_none(cls, v: str | None) -> str | None:
+        return (v or "").strip() or None
+
+
+class ConversationOut(BaseModel):
+    id: uuid.UUID
+    title: str
+    created_at: datetime
+    message_count: int = 0
+    last_message_at: datetime | None = None
+
+
+class MessageIn(BaseModel):
+    content: str = Field(min_length=1, max_length=1000)
+    document_id: uuid.UUID | None = None  # optional: limit this question to one document
+
+    @field_validator("content")
+    @classmethod
+    def content_not_blank(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("Message must not be blank")
+        return v
+
+
+class MessageOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    role: str
+    content: str
+    sources: list[SourceOut] = []
+    created_at: datetime
+
+    @field_validator("sources", mode="before")
+    @classmethod
+    def no_sources_is_empty_list(cls, v):
+        return v or []
+
+
+class ConversationDetail(BaseModel):
+    id: uuid.UUID
+    title: str
+    created_at: datetime
+    messages: list[MessageOut]
+
+
+class MessageExchange(BaseModel):
+    user_message: MessageOut
+    assistant_message: MessageOut
+
+
 class UserOut(BaseModel):
     """Public view of a user. Never includes password_hash."""
 

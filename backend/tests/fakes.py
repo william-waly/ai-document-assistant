@@ -37,11 +37,12 @@ class FakeLLM:
 
     def __init__(self, reply: str = "Fake answer [1]"):
         self.reply = reply
+        self.queue: list[str] = []  # scripted replies, used first, one per call
         self.calls: list[list[dict[str, str]]] = []
 
     def generate(self, messages):
         self.calls.append(messages)
-        return self.reply
+        return self.queue.pop(0) if self.queue else self.reply
 
 
 class FailingLLM:
